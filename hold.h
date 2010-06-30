@@ -7,6 +7,7 @@ class Hold
 {
 public:
     Hold(char* hold_name);
+    std::string get_string();
 private:
     std::string name;
     std::list<std::string> map;
