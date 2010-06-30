@@ -1,8 +1,11 @@
 CPP = g++
-LIBS = lib/hold.hpp
+LIBS = hold.o game.o
 
-simulate : simulate.cpp $(LIBS)
-	$(CPP) -o $@ $<
+.cpp.o :
+	$(CPP) -c $<
+
+play : play.cpp $(LIBS)
+	$(CPP) -o $@ play.cpp $(LIBS)
 
 clean:
-	rm simulate
+	rm -rf play $(LIBS)
