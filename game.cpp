@@ -4,15 +4,12 @@
 #include <iostream>
 using namespace std;
 
-Game::Game(Hold* initial_hold)
+Game::Game(Hold* initialHold)
 {
-    hold = initial_hold;
+    hold = initialHold;
 }
 
 void Game::run()
 {
-    string command;
-    cout << hold->get_string() << endl;
-    cout << "#>";
-    cin >> command;
+    cout << hold->getString() << endl;
 }

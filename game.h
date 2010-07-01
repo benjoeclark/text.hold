@@ -7,7 +7,7 @@
 class Game
 {
 public:
-    Game(Hold* initial_hold);
+    Game(Hold* initialHold);
     void run();
 private:
     Hold* hold;
