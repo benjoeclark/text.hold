@@ -8,7 +8,7 @@ class Game
 {
 public:
     Game(Hold* initialHold);
-    void run();
+    std::string run();
 private:
     Hold* hold;
 };

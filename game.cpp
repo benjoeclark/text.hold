@@ -9,7 +9,8 @@ Game::Game(Hold* initialHold)
     hold = initialHold;
 }
 
-void Game::run()
+string Game::run()
 {
     cout << hold->getString() << endl;
+    return string("");
 }

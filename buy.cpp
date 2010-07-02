@@ -1,3 +1,4 @@
+#include "shop.h"
 #include "hold.h"
 #include <string>
 #include <fstream>
@@ -31,9 +32,18 @@ int main(int argc, char* argv[])
         }
         hold_file.close();
         backup_file.close();
-        // start the store
+        // start the shop
+        cout << "started the shop" << endl;
         Shop shop(hold_contents);
-        shop.run();
+        cout << "contents " << hold_contents.length() << hold_contents << endl;
+        hold_contents = shop.run();
+        cout << "contents " << hold_contents.length() << hold_contents << endl;
+        if (hold_contents.length() > 0)
+        {
+            ofstream hold_file(hold_file_name.c_str());
+            hold_file << hold_contents;
+            hold_file.close();
+        }
     }
     else
     {

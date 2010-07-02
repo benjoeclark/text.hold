@@ -1,5 +1,5 @@
 CPP = g++
-LIBS = hold.o game.o
+LIBS = hold.o game.o shop.o
 
 .cpp.o :
 	$(CPP) -c $<

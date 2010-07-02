@@ -35,7 +35,13 @@ int main(int argc, char* argv[])
         // play the game
         Hold hold(hold_contents);
         Game game(&hold);
-        game.run();
+        hold_contents = game.run();
+        if (hold_contents.length() > 0)
+        {
+            ofstream hold_file(hold_file_name.c_str());
+            hold_file << hold_contents;
+            hold_file.close();
+        }
     }
     else
     {
