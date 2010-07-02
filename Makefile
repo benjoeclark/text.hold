@@ -4,8 +4,13 @@ LIBS = hold.o game.o
 .cpp.o :
 	$(CPP) -c $<
 
+all : play buy
+
 play : play.cpp $(LIBS)
-	$(CPP) -o $@ play.cpp $(LIBS)
+	$(CPP) -o $@ $< $(LIBS)
+
+buy : buy.cpp $(LIBS)
+	$(CPP) -o $@ $< $(LIBS)
 
 clean:
-	rm -rf play $(LIBS)
+	rm -rf play buy $(LIBS)
