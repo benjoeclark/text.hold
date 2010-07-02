@@ -13,7 +13,7 @@ string Hold::getString()
     return name;
 }
 
-string newHold(int width, int height, int army)
+string newHold(int width, int height)
 {
     string contents;
     for (int row=0; row<height; row++)
@@ -24,11 +24,6 @@ string newHold(int width, int height, int army)
         }
         contents += '\n';
     }
-    contents += '\n';
-    for (int count=0; count<army; count++)
-    {
-        contents += 'k';
-    }
-    contents += '\n';
+    contents += "\n$\n";
     return contents;
 }

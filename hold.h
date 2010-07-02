@@ -13,5 +13,5 @@ private:
     std::list<std::string> map;
 };
 
-std::string newHold(int width=10, int height=6, int army=5);
+std::string newHold(int width=10, int height=6);
 #endif //HOLD_H
