@@ -32,6 +32,8 @@ int main(int argc, char* argv[])
         hold_file.close();
         backup_file.close();
         // start the store
+        Shop shop(hold_contents);
+        shop.run();
     }
     else
     {
