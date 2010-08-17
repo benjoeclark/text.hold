@@ -10,6 +10,8 @@ public:
     std::string getString();
 private:
     std::string name;
+    int width;
+    int height;
     std::list<std::string> map;
 };
 

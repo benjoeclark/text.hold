@@ -44,3 +44,21 @@ Container
 Sensed
 ======
 
+
+Possible Creatures
+==================
+Human
+Elf
+Dragon
+dwarf
+snake
+kobold
+halfling
+lizard
+Fire elemental
+Wizard
+Skeleton
+water elemental
+ice elemental
+dog
+archer
