@@ -4,14 +4,28 @@ import time
 import math
 
 cellSymbols = ['*', '.', '>', '@', '^']
+SPACE = ' '
+WALLS = ['#', '|', '-']
 
 class Hold(object):
     def __init__(self):
         self.width = 10
         self.height = 10
         self.cells = []
+        verticalWalls = [10, 20, 30, 40, 50, 60, 70, 80,
+            19, 29, 39, 49, 59, 69, 79, 89]
+        horizontalWalls = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+            90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
+            25, 26, 27, 28,
+            41, 42, 43, 44, 45,
+            65, 66, 67, 68]
         for cell in xrange(self.width*self.height):
-            self.cells.append(Cell())
+            if cell in verticalWalls:
+                self.cells.append(Wall('#'))
+            elif cell in horizontalWalls:
+                self.cells.append(Wall('#'))
+            else:
+                self.cells.append(Cell())
         self.adventurer = Adventurer()
         self.mobs = [self.adventurer]
         self.cells[self.getValidPosition()] = self.adventurer
@@ -38,7 +52,32 @@ class Hold(object):
                 vector = [cellPosition[0] - position[0], cellPosition[1] - position[1]]
                 if self.distance(vector) <= character.range:
                     view.append((vector, self.cells[cellIndex]))
+        return self.filterView(view)
+
+    def filterView(self, view):
+        toRemove = []
+        for index in range(len(view)):
+            for other in range(len(view)):
+                if index != other:
+                    pos = view[index][0]
+                    dist = self.distance(pos)
+                    otherPos = view[other][0]
+                    otherDist = self.distance(otherPos)
+                    if otherDist < dist and self.dotProduct(pos, otherPos) > 0:
+                        if self.perpendicularSquared(pos, otherPos) < 0.5 and \
+                            view[other][1].symbol in WALLS:
+                            toRemove.append(index)
+                            break
+        toRemove.reverse()
+        for index in toRemove:
+            view.pop(index)
         return view
+
+    def dotProduct(self, v1, v2):
+        return v1[0]*v2[0] + v1[1]*v2[1]
+
+    def perpendicularSquared(self, v1, v2):
+        return v2[0]**2+v2[1]**2 - self.dotProduct(v1, v2)**2/float(v1[0]**2+v1[1]**2)
 
     def attack(self, attacker, defender):
         index = self.cells.index(defender)
@@ -91,6 +130,12 @@ class Cell(object):
         self.range = 0
         self.dead = False
 
+class Wall(Cell):
+    def __init__(self, symbol='|'):
+        self.symbol = symbol
+        self.range = 0
+        self.dead = False
+
 class Adventurer(Cell):
     def __init__(self, symbol='@'):
         self.symbol = symbol
@@ -103,9 +148,9 @@ class Adventurer(Cell):
         directions = []
         for v in view:
             vector, mob = v
-            if mob.symbol != ' ':
+            if mob.range > 0:
                 target = mob
-            elif hold.distance(vector) <= self.movement:
+            elif mob.symbol == ' ' and hold.distance(vector) <= self.movement:
                 directions.append(vector)
         if target is not None:
             hold.attack(self, target)
