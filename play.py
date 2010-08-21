@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import random
+import sys
+import os
 import time
 import math
 
@@ -7,31 +9,62 @@ cellSymbols = ['*', '.', '>', '@', '^']
 SPACE = ' '
 WALLS = ['#', '|', '-']
 
+def sign(value):
+    return 1 if value > 0 else -1
+
+def abs(value):
+    if sign(value) == -1:
+        return -1 * value
+    return value
+
 class Hold(object):
-    def __init__(self):
-        self.width = 10
-        self.height = 10
-        self.cells = []
-        verticalWalls = [10, 20, 30, 40, 50, 60, 70, 80,
-            19, 29, 39, 49, 59, 69, 79, 89]
-        horizontalWalls = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-            90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
-            25, 26, 27, 28,
-            41, 42, 43, 44, 45,
-            65, 66, 67, 68]
-        for cell in xrange(self.width*self.height):
-            if cell in verticalWalls:
-                self.cells.append(Wall('#'))
-            elif cell in horizontalWalls:
-                self.cells.append(Wall('#'))
-            else:
-                self.cells.append(Cell())
-        self.adventurer = Adventurer()
-        self.mobs = [self.adventurer]
-        self.cells[self.getValidPosition()] = self.adventurer
-        for mob in xrange(10):
-            self.mobs.append(Mob())
-            self.cells[self.getValidPosition()] = self.mobs[-1]
+    def __init__(self, data=None):
+        if data is None:
+            self.width = 10
+            self.height = 10
+            self.cells = []
+            verticalWalls = [10, 20, 30, 40, 50, 60, 70, 80,
+                19, 29, 39, 49, 59, 69, 79, 89]
+            horizontalWalls = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
+                25, 26, 27, 28,
+                41, 42, 43, 44, 45,
+                65, 66, 67, 68]
+            for cell in xrange(self.width*self.height):
+                if cell in verticalWalls:
+                    self.cells.append(Wall('#'))
+                elif cell in horizontalWalls:
+                    self.cells.append(Wall('#'))
+                else:
+                    self.cells.append(Cell())
+            self.adventurer = Adventurer()
+            self.mobs = [self.adventurer]
+            self.cells[self.getValidPosition()] = self.adventurer
+            for mob in xrange(10):
+                self.mobs.append(Mob())
+                self.cells[self.getValidPosition()] = self.mobs[-1]
+        else:
+            self.width = None
+            self.height = data.count('\n')
+            self.adventurer = Adventurer()
+            self.mobs = [self.adventurer]
+            index = 0
+            self.cells = []
+            for element in data:
+                if element == '\n':
+                    if self.width is None:
+                        self.width = index
+                elif element == '@':
+                    self.cells.append(self.adventurer)
+                elif element == '#':
+                    self.cells.append(Wall('#'))
+                elif element == '*':
+                    self.mobs.append(Mob())
+                    self.cells.append(self.mobs[-1])
+                else:
+                    self.cells.append(Cell())
+                if element != '\n':
+                    index += 1
 
     def update(self):
         for mob in self.mobs:
@@ -41,6 +74,13 @@ class Hold(object):
         for mob in self.mobs:
             if mob.dead:
                 self.mobs.pop(self.mobs.index(mob))
+
+    def checkGameOver(self):
+        if self.adventurer not in self.mobs:
+            return False
+        if len(self.mobs) <= 1:
+            return False
+        return True
 
     def getView(self, character):
         index = self.cells.index(character)
@@ -80,9 +120,11 @@ class Hold(object):
         return v2[0]**2+v2[1]**2 - self.dotProduct(v1, v2)**2/float(v1[0]**2+v1[1]**2)
 
     def attack(self, attacker, defender):
-        index = self.cells.index(defender)
-        defender.dead = True
-        self.cells[index] = Cell()
+        defender.hp -= attacker.ap
+        if defender.hp <= 0:
+            index = self.cells.index(defender)
+            defender.dead = True
+            self.cells[index] = Cell()
 
     def move(self, mover, direction):
         if direction != [0, 0]:
@@ -136,59 +178,95 @@ class Wall(Cell):
         self.range = 0
         self.dead = False
 
-class Adventurer(Cell):
-    def __init__(self, symbol='@'):
+class Mob(Cell):
+    def __init__(self, symbol='*'):
+        self.setAttributes(symbol, range=2, movement=1)
+
+    def setAttributes(self, symbol='*', range=1, movement=1, weaponRange=1, hp=4, ap=1, local=True):
         self.symbol = symbol
-        self.range = 3
-        self.movement = 2
+        self.range = range
+        self.movement = movement
+        self.weaponRange = weaponRange
+        self.maxhp = hp
+        self.hp = hp
+        self.ap = ap
+        self.local = local
         self.dead = False
 
     def show(self, view, hold):
-        target = None
+        targets = []
         directions = []
         for v in view:
             vector, mob = v
-            if mob.range > 0:
-                target = mob
+            if mob.range > 0 and self.local != mob.local:
+                targets.append((hold.distance(vector), mob))
             elif mob.symbol == ' ' and hold.distance(vector) <= self.movement:
                 directions.append(vector)
-        if target is not None:
-            hold.attack(self, target)
+        if len(targets) > 0:
+            dist, target = self.getTarget(targets)
+            if dist > self.weaponRange:
+                # move toward target
+                direction = None
+                for v in view:
+                    vector, mob = v
+                    if mob == target:
+                        direction = vector
+                movesLeft = self.movement
+                x = 0
+                y = 0
+                while movesLeft > 0 and hold.distance([direction[0]-x, direction[1]-y]) > self.weaponRange:
+                    if abs(direction[0] - x) > abs(direction[1] - y) and [x+sign(direction[0]), y] in directions:
+                        x += sign(direction[0])
+                    elif [x, y+sign(direction[1])] in directions:
+                        y += sign(direction[1])
+                    else:
+                        break
+                hold.move(self, [x, y])
+            else:
+                hold.attack(self, target)
         elif len(directions) > 0:
             hold.move(self, random.choice(directions))
 
-class Mob(Cell):
-    def __init__(self, symbol='*'):
-        self.symbol = symbol
-        self.range = 1
-        self.movement = 1
-        self.dead = False
+    def getTarget(self, targets):
+        nearest = targets[0][1]
+        dist = targets[0][0]
+        for target in targets[1:]:
+            if target[0] < dist:
+                dist = target[0]
+                nearest = target[1]
+        return dist, nearest
 
-    def show(self, view, hold):
-        directions = [[0, 0]]
-        for v in view:
-            vector, mob = v
-            if mob.symbol == ' ' and hold.distance(vector) <= self.movement:
-                directions.append(vector)
-        if len(directions) > 0:
-            hold.move(self, random.choice(directions))
+    def __str__(self):
+        return self.symbol + ' ' + '+'*self.hp
+
+class Adventurer(Mob):
+    def __init__(self, symbol='@'):
+        self.setAttributes(symbol, range=3, movement=2, weaponRange=1, hp=10, ap=2, local=False)
 
 class Game(object):
-    def __init__(self):
-        self.hold = Hold()
+    def __init__(self, data=None):
+        if data is not None:
+            data = open(os.path.join(data, 'hold'), 'r').read()
+        self.hold = Hold(data)
         self.running = False
         self.fps = 1
-
     def play(self):
         self.running = True
         while self.running:
             print '\n'*100
             print self.hold
+            for mob in self.hold.mobs:
+                print mob
+            self.running = self.hold.checkGameOver()
             self.hold.update()
             time.sleep(1./self.fps)
 
 def main():
-    game = Game()
+    if len(sys.argv) > 1:
+        holdFolder = sys.argv[-1]
+        game = Game(holdFolder)
+    else:
+        game = Game()
     game.play()
 
 if __name__ == '__main__':
